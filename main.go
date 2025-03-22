@@ -1,13 +1,16 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"slices"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"nullprogram.com/x/optparse"
 )
@@ -98,20 +101,35 @@ func main() {
 		}
 		w.WriteHeader(http.StatusInternalServerError)
 	})
-
 	server := http.Server{
 		Handler: mux,
 	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-c
+		err = server.Shutdown(context.Background())
+		if err != nil {
+			fmt.Fprint(os.Stderr, err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}()
+
 	if port != 0 {
 		server.Addr = listen_ip + ":" + strconv.Itoa(port)
-		server.ListenAndServe()
+		if err := server.ListenAndServe(); err != http.ErrServerClosed {
+			fmt.Fprint(os.Stderr, err)
+		}
 	} else {
 		listener, err := net.Listen("unix", socket)
 		if err != nil {
 			fmt.Fprint(os.Stderr, err)
 			os.Exit(1)
 		}
-		server.Serve(listener)
-		listener.Close()
+		if err := server.Serve(listener); err != http.ErrServerClosed {
+			fmt.Fprint(os.Stderr, err)
+		}
 	}
 }
