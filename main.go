@@ -128,6 +128,10 @@ func main() {
 			fmt.Fprint(os.Stderr, err)
 			os.Exit(1)
 		}
+		if err := os.Chmod(socket, 0666); err != nil {
+			fmt.Fprint(os.Stderr, err)
+			os.Exit(1)
+		}
 		if err := server.Serve(listener); err != http.ErrServerClosed {
 			fmt.Fprint(os.Stderr, err)
 		}
