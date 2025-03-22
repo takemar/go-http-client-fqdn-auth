@@ -5,7 +5,9 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"slices"
 	"strconv"
+	"strings"
 
 	"nullprogram.com/x/optparse"
 )
@@ -14,7 +16,8 @@ func main() {
 	options := []optparse.Option{
 		{Long: "socket", Short: 's', Kind: optparse.KindRequired},
 		{Long: "port", Short: 'p', Kind: optparse.KindRequired},
-		{Long: "listen-ip", Short: 'l', Kind: optparse.KindRequired},
+		{Long: "listen-ip", Kind: optparse.KindRequired},
+		{Long: "trusted-proxy", Kind: optparse.KindRequired},
 	}
 	results, allowed_domains, err := optparse.Parse(options, os.Args)
 	if err != nil {
@@ -30,6 +33,7 @@ func main() {
 	var socket string
 	var port int
 	var listen_ip string
+	var trusted_proxies []string
 
 	for _, result := range results {
 		switch result.Long {
@@ -43,6 +47,13 @@ func main() {
 			}
 		case "listen-ip":
 			listen_ip = result.Optarg
+		case "trusted-proxy":
+			ip_address := net.ParseIP(result.Optarg)
+			if ip_address == nil {
+				fmt.Fprintf(os.Stderr, "trusted proxy ip address \"%s\" is invalid format", result.Optarg)
+				os.Exit(1)
+			}
+			trusted_proxies = append(trusted_proxies, ip_address.String())
 		}
 	}
 
@@ -60,12 +71,37 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
+		x_forwarded_for := r.Header.Get("X-Forwarded-For")
+		if x_forwarded_for == "" {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		for _, forwarded_ip_address := range slices.Backward(strings.Split(x_forwarded_for, ",")) {
+			forwarded_ip_address := net.ParseIP(strings.TrimSpace(forwarded_ip_address)).String()
+			if slices.Contains(trusted_proxies, forwarded_ip_address) {
+				continue
+			} else {
+				for _, allowed_domain := range allowed_domains {
+					allowed_ip_addresses, err := net.LookupHost(allowed_domain)
+					if err != nil {
+						w.WriteHeader(http.StatusInternalServerError)
+						return
+					}
+					if slices.Contains(allowed_ip_addresses, forwarded_ip_address) {
+						w.WriteHeader(http.StatusOK)
+						return
+					}
+				}
+				w.WriteHeader(http.StatusForbidden)
+				return
+			}
+		}
+		w.WriteHeader(http.StatusInternalServerError)
 	})
+
 	server := http.Server{
 		Handler: mux,
 	}
-
 	if port != 0 {
 		server.Addr = listen_ip + ":" + strconv.Itoa(port)
 		server.ListenAndServe()
