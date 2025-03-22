@@ -24,12 +24,12 @@ func main() {
 	}
 	results, allowed_domains, err := optparse.Parse(options, os.Args)
 	if err != nil {
-		fmt.Fprint(os.Stderr, err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 
 	if len(allowed_domains) == 0 {
-		fmt.Fprint(os.Stderr, "allowed domain must be specified")
+		fmt.Fprintln(os.Stderr, "allowed domain must be specified")
 		os.Exit(1)
 	}
 
@@ -45,7 +45,7 @@ func main() {
 		case "port":
 			port, err = strconv.Atoi(result.Optarg)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "port is expected to be int, but given \"%s\"", result.Optarg)
+				fmt.Fprintf(os.Stderr, "port is expected to be int, but given \"%s\"\n", result.Optarg)
 				os.Exit(1)
 			}
 		case "listen-ip":
@@ -53,7 +53,7 @@ func main() {
 		case "trusted-proxy":
 			ip_address := net.ParseIP(result.Optarg)
 			if ip_address == nil {
-				fmt.Fprintf(os.Stderr, "trusted proxy ip address \"%s\" is invalid format", result.Optarg)
+				fmt.Fprintf(os.Stderr, "trusted proxy ip address \"%s\" is invalid format\n", result.Optarg)
 				os.Exit(1)
 			}
 			trusted_proxies = append(trusted_proxies, ip_address.String())
@@ -61,11 +61,11 @@ func main() {
 	}
 
 	if socket != "" && port != 0 {
-		fmt.Fprint(os.Stderr, "socket and port are not specified at the same time")
+		fmt.Fprintln(os.Stderr, "socket and port are not specified at the same time")
 		os.Exit(1)
 	}
 	if socket != "" && listen_ip != "" {
-		fmt.Fprint(os.Stderr, "socket and listen-ip are not specified at the same time")
+		fmt.Fprintln(os.Stderr, "socket and listen-ip are not specified at the same time")
 		os.Exit(1)
 	}
 	if socket == "" && port == 0 {
@@ -111,7 +111,7 @@ func main() {
 		<-c
 		err = server.Shutdown(context.Background())
 		if err != nil {
-			fmt.Fprint(os.Stderr, err)
+			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 		os.Exit(0)
@@ -120,20 +120,20 @@ func main() {
 	if port != 0 {
 		server.Addr = listen_ip + ":" + strconv.Itoa(port)
 		if err := server.ListenAndServe(); err != http.ErrServerClosed {
-			fmt.Fprint(os.Stderr, err)
+			fmt.Fprintln(os.Stderr, err)
 		}
 	} else {
 		listener, err := net.Listen("unix", socket)
 		if err != nil {
-			fmt.Fprint(os.Stderr, err)
+			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 		if err := os.Chmod(socket, 0666); err != nil {
-			fmt.Fprint(os.Stderr, err)
+			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 		if err := server.Serve(listener); err != http.ErrServerClosed {
-			fmt.Fprint(os.Stderr, err)
+			fmt.Fprintln(os.Stderr, err)
 		}
 	}
 }
