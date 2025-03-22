@@ -64,8 +64,8 @@ func main() {
 		fmt.Fprint(os.Stderr, "socket and port are not specified at the same time")
 		os.Exit(1)
 	}
-	if listen_ip != "" && port == 0 {
-		fmt.Fprint(os.Stderr, "port must be specified")
+	if socket != "" && listen_ip != "" {
+		fmt.Fprint(os.Stderr, "socket and listen-ip are not specified at the same time")
 		os.Exit(1)
 	}
 	if socket == "" && port == 0 {
