@@ -9,7 +9,7 @@ The program receives subrequests from nginx and determines each time if the IP a
 First, build the module and place the binary in an arbitrary location.
 
 ```
-$ go build .
+$ go build
 $ sudo cp http-client-fqdn-auth /usr/local/bin
 ```
 
@@ -42,8 +42,8 @@ http {
     }
 
     server {
-        listen 80; ssl;
-        server_name server.example.org;
+        listen 80;
+        server_name server.example.net;
 
         auth_request /auth;
         location /auth {
