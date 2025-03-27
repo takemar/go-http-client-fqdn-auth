@@ -1,8 +1,8 @@
 # go-http-client-fqdn-auth
 
-This Go module is a tiny program working with the nginx [`auth_request`](https://nginx.org/en/docs/http/ngx_http_auth_request_module.html) directive and performs client authentication based on its domain (FQDN).
+This Go module is a tiny program working with the [nginx `auth_request` directive](https://nginx.org/en/docs/http/ngx_http_auth_request_module.html) and performs client authentication (access control) based on its domain (FQDN).
 
-The program receives subrequests from nginx and determines each time if the IP address of the client matches the one for the specified domain. Since it performs DNS resolution on every request, it can properly perform domain-based authentication even if DDNS is employed.
+The program receives subrequests from nginx and determines each time if the IP address of the client matches the one for the specified domain. Since it performs DNS resolution on every request, it can properly perform domain-based authentication even if DDNS is employed. This is roughly equivalent to [`Require forward-dns` directive in Apache httpd](https://httpd.apache.org/docs/current/en/mod/mod_authz_host.html#reqfwddns).
 
 ## Usage
 
