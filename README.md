@@ -49,6 +49,7 @@ http {
         location /auth {
             internal;
             proxy_pass_request_body off;
+            proxy_set_header Content-Length "";
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_pass http://auth/;
         }
